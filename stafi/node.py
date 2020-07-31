@@ -24,7 +24,7 @@ class Node:
         return r.json()['result']
 
     def __getattribute__(self, item):
-        if item in self.__dict__['methods']:
+        if not item.startswith('__') and item in self.__class__.methods:
             return partial(self.rpc_request, item)
         return super(Node, self).__getattribute__(item)
 
