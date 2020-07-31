@@ -41,7 +41,7 @@ class Alert:
         notify = 'info' if not self.method(value) else 'warning'
         call_ts = time.monotonic()
 
-        if notify == 'info' or call_ts - (self._last_warning or call_ts) > self.delay:
+        if notify == 'info' or call_ts - (self._last_warning or call_ts) >= self.delay:
             if notify == 'warning':
                 self._last_warning = call_ts
             for notifier in self.notifiers:
