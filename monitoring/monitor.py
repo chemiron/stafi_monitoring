@@ -23,7 +23,7 @@ class Metric:
             'value': value,
         }
         for alert in self.__alerts:
-            alert(value, context)
+            alert(value, context=context)
 
 
 class Alert:
@@ -48,9 +48,13 @@ class Alert:
                 getattr(notifier, notify)(context)
 
 
-class Monitor:
-    __metrics = []
+class MonitorType(type):
+    def __init__(cls, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        cls._metrics = []
 
+
+class Monitor(metaclass=MonitorType):
     def __init__(self, check_interval):
         self.check_interval = check_interval
         self._last_processed = time.monotonic()
@@ -59,7 +63,7 @@ class Monitor:
         if time.monotonic() - self._last_processed < self.check_interval:
             return
 
-        for metric in self.__metrics:
+        for metric in self._metrics:
             try:
                 metric(self)
             except Exception:
@@ -71,7 +75,7 @@ class Monitor:
     def set_metric(cls, name):
         def wrapper(fn):
             metric = Metric(name, fn)
-            cls.__metrics.append(metric)
+            cls._metrics.append(metric)
             return metric
         return wrapper
 
