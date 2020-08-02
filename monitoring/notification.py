@@ -59,10 +59,10 @@ class Email(Notifier):
         title = "Warning"
         if self.title_template is not None:
             with open(self.title_template) as fp:
-                title = fp.read().format(context)
+                title = fp.read().format(*context)
 
         with open(self.email_template) as fp:
-            body = fp.read().format(context)
+            body = fp.read().format(*context)
 
         self._send_emails(title, body)
 
