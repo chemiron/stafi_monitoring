@@ -2,6 +2,8 @@ import socket
 import time
 import traceback
 
+import settings
+
 
 class Metric:
     def __init__(self, name, method):
@@ -34,6 +36,7 @@ class Alert:
         self.delay = delay or 0
 
         self._last_warning = None
+        self._next_warning = None
 
     def __call__(self, value, context=None):
         if context is None:
@@ -42,8 +45,11 @@ class Alert:
         notify = 'info' if not self.method(value, context) else 'warning'
         call_ts = time.monotonic()
 
-        if notify == 'info' or call_ts - (self._last_warning or call_ts) >= self.delay:
+        if (notify == 'info' or
+                (call_ts - (self._last_warning or call_ts) >= self.delay
+                 and call_ts - (self._next_warning or call_ts) >= 0)):
             self._last_warning = call_ts if notify == 'warning' else None
+            self._next_warning = call_ts + settings.WARNING_REPEAT
             for notifier in self.notifiers:
                 getattr(notifier, notify)(context)
 
