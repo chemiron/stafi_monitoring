@@ -1,3 +1,4 @@
+import socket
 import time
 import traceback
 
@@ -15,15 +16,15 @@ class Metric:
             return alert
         return wrapper
 
-    def __call__(self, monitor):
+    def __call__(self, monitor, context):
         value = self.method(monitor)
-        context = {
+        context.update({
             'monitor': monitor,
             'metric': self.name,
             'value': value,
-        }
+        })
         for alert in self.__alerts:
-            alert(value, context=context)
+            alert(value, context=context.copy())
 
 
 class Alert:
@@ -34,16 +35,15 @@ class Alert:
 
         self._last_warning = None
 
-    def __call__(self, value, *, context=None):
+    def __call__(self, value, context=None):
         if context is None:
             return
 
-        notify = 'info' if not self.method(value) else 'warning'
+        notify = 'info' if not self.method(value, context) else 'warning'
         call_ts = time.monotonic()
 
         if notify == 'info' or call_ts - (self._last_warning or call_ts) >= self.delay:
-            if notify == 'warning':
-                self._last_warning = call_ts
+            self._last_warning = call_ts if notify == 'warning' else None
             for notifier in self.notifiers:
                 getattr(notifier, notify)(context)
 
@@ -65,7 +65,7 @@ class Monitor(metaclass=MonitorType):
 
         for metric in self._metrics:
             try:
-                metric(self)
+                metric(self, self.get_context())
             except Exception:
                 traceback.print_exc()
 
@@ -78,6 +78,11 @@ class Monitor(metaclass=MonitorType):
             cls._metrics.append(metric)
             return metric
         return wrapper
+
+    def get_context(self):
+        return {
+            "host": socket.gethostname(),
+        }
 
 
 class SystemMonitor(Monitor):
