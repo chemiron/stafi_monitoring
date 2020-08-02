@@ -24,6 +24,8 @@ class Node:
         r = requests.post(self.url, data=json.dumps(data) if data is not None else None,
                           headers=headers)
         r.raise_for_status()
+        if method is None:
+            return None
         return r.json()['result']
 
     def __getattribute__(self, item):
