@@ -46,7 +46,7 @@ class Email(Notifier):
             password = smtp_settings.pop('password', None)
 
             smtp_cls = smtplib.SMTP if not is_ssl else smtplib.SMTP_SSL
-            server = smtp_cls(**settings.SMTP_SERVER)
+            server = smtp_cls(**smtp_settings)
             if username is not None:
                 server.login(username, password)
             setattr(self, '_smtp_server', server)
