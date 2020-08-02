@@ -17,12 +17,12 @@ class Metric:
         return wrapper
 
     def __call__(self, monitor, context):
-        value = self.method(monitor)
         context.update({
             'monitor': monitor,
             'metric': self.name,
-            'value': value,
         })
+        value = self.method(monitor, context)
+        context['value'] = value
         for alert in self.__alerts:
             alert(value, context=context.copy())
 
