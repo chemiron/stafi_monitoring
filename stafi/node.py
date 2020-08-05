@@ -17,14 +17,15 @@ class Node:
     @property
     def name(self):
         if self._name is None:
+            self._name = ""
             data = self.monitor_request()
             if data is not None:
-                for key, value in data:
+                for key, value in data.items():
                     if key.startswith('substrate_build_info'):
-                        res = re.search(r'\{[^}]*name="([^"]+)"')
+                        res = re.search(r'\{[^}]*name="([^"]+)"', key)
                         if res is not None:
                             self._name = res.group(1)
-            self._name = ""
+                            break
         return self._name
 
     def monitor_request(self):
@@ -33,11 +34,12 @@ class Node:
             r.raise_for_status()
 
             data = {}
-            for line in r.text:
-                if line.strip().startswith('#'):
+            for line in r.text.split('\n'):
+                line = line.strip()
+                if not line or line.startswith('#'):
                     continue
-                key, value = " ".split(line)
-                data['key'] = value
+                key, value = line.split(" ", 1)
+                data[key] = value
             return data
 
         return None
