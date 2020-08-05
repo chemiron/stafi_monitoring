@@ -56,7 +56,7 @@ class Alert:
             sent = True
 
         if notify == 'warning':
-            self._last_warning = call_ts if sent else self._last_warning
+            self._last_warning = call_ts if sent else (self._last_warning or call_ts)
             if sent:
                 self._next_warning = call_ts + self.sleep
         else:
