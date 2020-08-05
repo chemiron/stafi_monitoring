@@ -29,7 +29,7 @@ class Node:
 
     def monitor_request(self):
         if self.monitor_url is not None:
-            r = requests.get(self.url)
+            r = requests.get(self.monitor_url)
             r.raise_for_status()
 
             data = {}
