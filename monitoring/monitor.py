@@ -11,9 +11,9 @@ class Metric:
         self.method = method
         self.__alerts = []
 
-    def set_alert(self, notifier, delay=0):
+    def set_alert(self, notifier, **kwargs):
         def wrapper(fn):
-            alert = Alert(fn, notifier, delay=delay)
+            alert = Alert(fn, notifier, **kwargs)
             self.__alerts.append(alert)
             return fn
         return wrapper
@@ -30,10 +30,12 @@ class Metric:
 
 
 class Alert:
-    def __init__(self, method, *notifiers, delay=0):
+    def __init__(self, method, *notifiers, delay=0,
+                 sleep=settings.WARNING_REPEAT):
         self.method = method
         self.notifiers = notifiers
         self.delay = delay or 0
+        self.sleep = sleep
 
         self._last_warning = None
         self._next_warning = None
@@ -45,13 +47,20 @@ class Alert:
         notify = 'info' if not self.method(value, context) else 'warning'
         call_ts = time.monotonic()
 
+        sent = False
         if (notify == 'info' or
                 (call_ts - (self._last_warning or call_ts) >= self.delay
                  and call_ts - (self._next_warning or call_ts) >= 0)):
-            self._last_warning = call_ts if notify == 'warning' else None
-            self._next_warning = call_ts + settings.WARNING_REPEAT
             for notifier in self.notifiers:
                 getattr(notifier, notify)(context)
+            sent = True
+
+        if notify == 'warning':
+            self._last_warning = call_ts if sent else self._last_warning
+            if sent:
+                self._next_warning = call_ts + self.sleep
+        else:
+            self._last_warning = None
 
 
 class MonitorType(type):
