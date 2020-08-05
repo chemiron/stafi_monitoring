@@ -8,8 +8,39 @@ from functools import partial
 class Node:
     methods = ('system_health', 'chain_getHeader', 'system_version')
 
-    def __init__(self, url):
+    _name = None
+
+    def __init__(self, url, monitor_url=None):
         self.url = url
+        self.monitor_url = monitor_url
+
+    @property
+    def name(self):
+        if self._name is None:
+            data = self.monitor_request()
+            if data is not None:
+                for key, value in data:
+                    if key.startswith('substrate_build_info'):
+                        res = re.search(r'\{[^}]*name="([^"]+)"')
+                        if res is not None:
+                            self._name = res.group(1)
+            self._name = ""
+        return self._name
+
+    def monitor_request(self):
+        if self.monitor_url is not None:
+            r = requests.get(self.url)
+            r.raise_for_status()
+
+            data = {}
+            for line in r.text:
+                if line.strip().startswith('#'):
+                    continue
+                key, value = " ".split(line)
+                data['key'] = value
+            return data
+
+        return None
 
     def rpc_request(self, method=None, *args):
         data = None

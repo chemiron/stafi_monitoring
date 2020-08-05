@@ -11,11 +11,11 @@ class Metric:
         self.method = method
         self.__alerts = []
 
-    def set_alert(self, *notifiers, delay=0):
+    def set_alert(self, notifier, delay=0):
         def wrapper(fn):
-            alert = Alert(fn, *notifiers, delay=delay)
+            alert = Alert(fn, notifier, delay=delay)
             self.__alerts.append(alert)
-            return alert
+            return fn
         return wrapper
 
     def __call__(self, monitor, context):

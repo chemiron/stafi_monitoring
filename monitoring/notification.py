@@ -48,7 +48,9 @@ class Email(Notifier):
             smtp_cls = smtplib.SMTP if not is_ssl else smtplib.SMTP_SSL
             server = smtp_cls(**smtp_settings)
             if username is not None:
+                server.ehlo(username)
                 server.login(username, password)
+                server.auth_plain()
             setattr(self, '_smtp_server', server)
 
         return server
